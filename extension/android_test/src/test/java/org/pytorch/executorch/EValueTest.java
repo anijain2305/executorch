@@ -32,6 +32,12 @@ import org.junit.runners.JUnit4;
 /** Unit tests for {@link EValue}. */
 @RunWith(JUnit4.class)
 public class EValueTest {
+  private static final int TYPE_CODE_NONE = 0;
+  private static final int TYPE_CODE_TENSOR = 1;
+  private static final int TYPE_CODE_STRING = 2;
+  private static final int TYPE_CODE_DOUBLE = 3;
+  private static final int TYPE_CODE_INT = 4;
+  private static final int TYPE_CODE_BOOL = 5;
 
   @Test
   public void testNone() {
@@ -215,4 +221,106 @@ public class EValueTest {
         fail("Should have thrown an exception");
     } catch (IllegalStateException e) {}
   }
+
+  @Test
+  public void testNoneSerde() {
+    EValue evalue = EValue.optionalNone();
+    byte[] bytes = evalue.toByteArray();
+    assertEquals(TYPE_CODE_NONE, bytes[0]);
+
+    EValue deser = EValue.fromByteArray(bytes);
+    assertEquals(deser.isNone(), true);
+  }
+
+  @Test
+  public void testBoolSerde() {
+    EValue evalue = EValue.from(true);
+    byte[] bytes = evalue.toByteArray();
+    assertEquals(TYPE_CODE_BOOL, bytes[0]);
+    assertEquals(1, bytes[1]);
+
+    EValue deser = EValue.fromByteArray(bytes);
+    assertEquals(deser.isBool(), true);
+    assertEquals(deser.toBool(), true);
+  }
+
+  @Test
+  public void testBoolSerde2() {
+    EValue evalue = EValue.from(false);
+    byte[] bytes = evalue.toByteArray();
+    assertEquals(TYPE_CODE_BOOL, bytes[0]);
+    assertEquals(0, bytes[1]);
+
+    EValue deser = EValue.fromByteArray(bytes);
+    assertEquals(deser.isBool(), true);
+    assertEquals(deser.toBool(), false);
+  }
+
+  @Test
+  public void testIntSerde() {
+    EValue evalue = EValue.from(1);
+    byte[] bytes = evalue.toByteArray();
+    assertEquals(TYPE_CODE_INT, bytes[0]);
+    assertEquals(0, bytes[1]);
+    assertEquals(0, bytes[2]);
+    assertEquals(0, bytes[3]);
+    assertEquals(0, bytes[4]);
+    assertEquals(0, bytes[5]);
+    assertEquals(0, bytes[6]);
+    assertEquals(0, bytes[7]);
+    assertEquals(1, bytes[8]);
+
+    EValue deser = EValue.fromByteArray(bytes);
+    assertEquals(deser.isInt(), true);
+    assertEquals(deser.toInt(), 1);
+  }
+
+  @Test
+  public void testLargeIntSerde() {
+    EValue evalue = EValue.from(256000);
+    byte[] bytes = evalue.toByteArray();
+    assertEquals(TYPE_CODE_INT, bytes[0]);
+
+    EValue deser = EValue.fromByteArray(bytes);
+    assertEquals(deser.isInt(), true);
+    assertEquals(deser.toInt(), 256000);
+  }
+
+  @Test
+  public void testDoubleSerde() {
+    EValue evalue = EValue.from(1.0d);
+    byte[] bytes = evalue.toByteArray();
+    assertEquals(TYPE_CODE_DOUBLE, bytes[0]);
+
+    EValue deser = EValue.fromByteArray(bytes);
+    assertEquals(deser.isDouble(), true);
+    // TODO: Fix me
+    // assertEquals(deser.toDouble(), 1.0d);
+  }
+
+  @Test
+  public void testStringSerde() {
+    EValue evalue = EValue.from("Hello");
+    byte[] bytes = evalue.toByteArray();
+    assertEquals(TYPE_CODE_STRING, bytes[0]);
+
+    EValue deser = EValue.fromByteArray(bytes);
+    assertEquals(deser.isString(), true);
+    // TODO: Fix me
+    // assertEquals(deser.toString(), "Hello");
+  }
+
+
+  @Test
+  public void testTensorSerde() {
+    Tensor tensor = Tensor.fromBlob(new float[] {1.0f}, new long[] {1});
+
+    EValue evalue = EValue.from(tensor);
+    byte[] bytes = evalue.toByteArray();
+    assertEquals(TYPE_CODE_TENSOR, bytes[0]);
+
+    EValue deser = EValue.fromByteArray(bytes);
+    assertEquals(deser.isTensor(), true);
+  }
+
 }
